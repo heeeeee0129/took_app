@@ -2,7 +2,10 @@ package com.example.took_app
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Intent
 import android.os.Bundle
+import android.service.notification.NotificationListenerService
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.enableEdgeToEdge
@@ -14,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var myWebView: WebView
+    private lateinit var webAppInterface: WebAppInterface
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true && permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
@@ -35,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         myWebView.addJavascriptInterface(WebAppInterface(this, myWebView), "Android")
         myWebView.webViewClient = WebViewClient()
         myWebView.loadUrl("https://i11e205.p.ssafy.io")
+
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
