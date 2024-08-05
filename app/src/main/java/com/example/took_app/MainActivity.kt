@@ -4,8 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
+import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.enableEdgeToEdge
@@ -16,14 +19,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity() {
     private lateinit var myWebView: WebView
     private lateinit var webAppInterface: WebAppInterface
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true && permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
             // Permissions granted
         } else {
             // Permissions not granted
@@ -36,22 +40,47 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13 이상에서만 권한을 요청합니다.
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED) {
+                // 권한이 이미 허용된 경우 로그를 출력합니다.
+                Log.d("FCM", "알림 권한이 이미 허용되었습니다.")
+            } else {
+                // 권한이 허용되지 않은 경우 권한을 요청합니다.
+                requestPermissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
+            }
+        }
+
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                // 토큰 요청에 실패한 경우 로그를 출력합니다.
+                Log.w("FCM", "토큰 요청 실패", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // 요청에 성공한 경우 토큰을 로그로 출력합니다.
+            val token = task.result
+            Log.d("FCM", "FCM 토큰: $token")
+        }
+
         myWebView = findViewById(R.id.webview)
         myWebView.settings.javaScriptEnabled = true
 
-        myWebView.addJavascriptInterface(WebAppInterface(this, myWebView), "Android")
+        webAppInterface = WebAppInterface(this, myWebView)
+        myWebView.addJavascriptInterface(webAppInterface, "Android")
         myWebView.webViewClient = WebViewClient()
         myWebView.loadUrl("https://i11e205.p.ssafy.io")
-
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
     }
@@ -90,6 +119,4 @@ class MainActivity : AppCompatActivity() {
 
         biometricPrompt.authenticate(promptInfo)
     }
-
-
 }

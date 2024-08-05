@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "433232049429",
+    "project_id": "took-a85bc",
+    "storage_bucket": "took-a85bc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433232049429:android:3a5c56d8b147d30a68651c",
+        "android_client_info": {
+          "package_name": "com.example.myfcmapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpfPT9A_R1TFpC2eQ87R8YRGchgPA8bjQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
