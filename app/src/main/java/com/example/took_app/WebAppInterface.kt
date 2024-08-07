@@ -13,6 +13,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 
@@ -85,7 +86,9 @@ class WebAppInterface(private val context: Context, private val webView: WebView
     @JavascriptInterface
     fun authenticate() {
         Toast.makeText(context, "생체인증", Toast.LENGTH_SHORT).show()
-        (context as MainActivity).startBiometricAuthentication()
+        val mainActivity = MainActivity.getInstance()
+        mainActivity?.startBiometricAuthentication()
+
     }
 
     private val locationListener = object : LocationListener {

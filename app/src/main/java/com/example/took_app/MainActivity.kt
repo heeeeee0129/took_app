@@ -3,6 +3,7 @@ package com.example.took_app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -20,10 +21,25 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var myWebView: WebView
     private lateinit var webAppInterface: WebAppInterface
+
+    init {
+        instance = this
+    }
+
+    companion object {
+        private var instance: MainActivity? = null
+
+        fun getInstance(): MainActivity? 		{
+            return instance
+        }
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
@@ -86,38 +102,45 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     fun startBiometricAuthentication() {
-        val biometricManager = BiometricManager.from(this)
-        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) != BiometricManager.BIOMETRIC_SUCCESS) {
-            // 생체 인증을 사용할 수 없는 경우
-            return
+        CoroutineScope(Dispatchers.Main).launch{
+            val biometricManager = BiometricManager.from(this@MainActivity)
+            if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) != BiometricManager.BIOMETRIC_SUCCESS) {
+                // 생체 인증을 사용할 수 없는 경우
+//                return
+            }
+
+            val executor = ContextCompat.getMainExecutor(this@MainActivity)
+            val biometricPrompt = BiometricPrompt(this@MainActivity, executor, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Log.d("biometric test","인증 에러")
+                    // 인증 에러 처리
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Log.d("biometric test","인증 실패")
+                    // 인증 실패 처리
+                }
+
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    // 인증 성공 처리
+                    Log.d("biometric test","인증 성공")
+                }
+            })
+
+            val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Biometric login for my app")
+                .setSubtitle("Log in using your biometric credential")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build()
+
+            biometricPrompt.authenticate(promptInfo)
         }
 
-        val executor = ContextCompat.getMainExecutor(this)
-        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                super.onAuthenticationError(errorCode, errString)
-                // 인증 에러 처리
-            }
-
-            override fun onAuthenticationFailed() {
-                super.onAuthenticationFailed()
-                // 인증 실패 처리
-            }
-
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                // 인증 성공 처리
-                webAppInterface.onBiometricAuthenticationSuccess()
-            }
-        })
-
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric login for my app")
-            .setSubtitle("Log in using your biometric credential")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
-            .build()
-
-        biometricPrompt.authenticate(promptInfo)
     }
 }
+
