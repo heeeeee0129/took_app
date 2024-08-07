@@ -13,13 +13,38 @@ import androidx.core.app.NotificationManagerCompat
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.example.took_app.network.FCMApiService
+import com.example.took_app.network.FCMTokenRequest
+import com.example.took_app.network.RetrofitClient
+import com.example.took_app.MainActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "FCM 토큰: $token")
-        // 여기서 서버로 토큰을 전송하거나 저장하는 작업을 수행합니다.
+        Log.d("FCM", "onNewToken 호출됨")
+        // 여기서 서버로 토큰을 전송하는 작업을 수행합니다.
+        val userSeq = 2L // userSeq 가져오기
+        val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
+        val request = FCMTokenRequest(userSeq, token) // 서버에 저장
+        Log.d("request", "request: $request")
+        apiService.saveToken(request).enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                if (response.isSuccessful) {
+                    Log.d("FCM", "토큰 저장 성공: ${response.body()}")
+                } else {
+                    Log.e("FCM", "토큰 저장 실패: ${response.errorBody()?.string()}")
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                Log.e("FCM", "토큰 저장 실패: ${t.message}")
+            }
+        })
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

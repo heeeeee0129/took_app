@@ -84,8 +84,15 @@ class WebAppInterface(private val context: Context, private val webView: WebView
 
     @JavascriptInterface
     fun authenticate() {
-        Toast.makeText(context, "생체인증", Toast.LENGTH_SHORT).show()
-        (context as MainActivity).startBiometricAuthentication()
+//        Toast.makeText(context, "생체인증", Toast.LENGTH_SHORT).show()
+        val mainActivity = MainActivity.getInstance()
+        mainActivity?.startBiometricAuthentication()
+
+    }
+    fun sendAuthenticationResultToWeb(success: Boolean) {
+        webView.post {
+            webView.evaluateJavascript("javascript:onAuthenticate($success)", null)
+        }
     }
 
     private val locationListener = object : LocationListener {
