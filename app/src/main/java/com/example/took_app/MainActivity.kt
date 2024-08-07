@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
 
         myWebView = findViewById(R.id.webview)
         myWebView.settings.javaScriptEnabled = true
+        WebView.setWebContentsDebuggingEnabled(true)
 
         webAppInterface = WebAppInterface(this, myWebView)
         myWebView.addJavascriptInterface(webAppInterface, "Android")

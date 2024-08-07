@@ -11,6 +11,8 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 
@@ -18,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity
 class WebAppInterface(private val context: Context, private val webView: WebView ) {
 
     private lateinit var locationManager: LocationManager
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var locationRunnable: Runnable
 
     @JavascriptInterface
     fun showToast(toast: String) {
@@ -50,9 +54,24 @@ class WebAppInterface(private val context: Context, private val webView: WebView
             // 위치 업데이트 요청
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10f, locationListener)
 
+            // 30초 주기로 위치 정보를 자바스크립트로 전송하는 타이머 설정
+            locationRunnable = Runnable {
+                locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { location ->
+                    sendLocationToWeb(location.latitude, location.longitude)
+                }
+                handler.postDelayed(locationRunnable, 30000) // 30초 후 다시 실행
+            }
+            handler.post(locationRunnable)
+
         } else {
             // 권한이 없을 경우
             Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun sendLocationToWeb(latitude: Double, longitude: Double) {
+        webView.post {
+            webView.evaluateJavascript("javascript:onLocation($latitude, $longitude)", null)
         }
     }
 
