@@ -53,8 +53,9 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+//        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        val isLogin = intent.getIntExtra("isLogin",-1)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13 이상에서만 권한을 요청합니다.
             if (ContextCompat.checkSelfPermission(
@@ -87,7 +88,13 @@ class MainActivity : AppCompatActivity() {
 
         webAppInterface = WebAppInterface(this, myWebView)
         myWebView.addJavascriptInterface(webAppInterface, "Android")
-        myWebView.webViewClient = WebViewClient()
+        myWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                myWebView.evaluateJavascript("javascript:postStatus($isLogin)", null)
+                // 현재 자동 로그인 여부 전달
+            }
+        }
         myWebView.loadUrl("https://i11e205.p.ssafy.io")
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -124,7 +131,6 @@ class MainActivity : AppCompatActivity() {
                     Log.d("biometric test","인증 실패")
                     // 인증 실패 처리
                 }
-
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     // 인증 성공 처리

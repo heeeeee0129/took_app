@@ -113,4 +113,11 @@ class WebAppInterface(private val context: Context, private val webView: WebView
         }
     }
 
+    fun getTokenFromWeb() {
+        webView.evaluateJavascript("javascript:postToken()", { token ->
+            Log.d("token",token)
+
+        })
+    }
+
 }

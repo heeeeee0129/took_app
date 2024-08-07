@@ -46,6 +46,9 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation(libs.firebase.messaging.ktx)
+    // Data Store
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation ("androidx.datastore:datastore-core:1.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
