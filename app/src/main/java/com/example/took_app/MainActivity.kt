@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         myWebView = findViewById(R.id.webview)
         myWebView.settings.javaScriptEnabled = true
         WebView.setWebContentsDebuggingEnabled(true)
+        myWebView.settings.domStorageEnabled = true
 
         webAppInterface = WebAppInterface(this, myWebView)
         myWebView.addJavascriptInterface(webAppInterface, "Android")
@@ -110,12 +111,21 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    override fun onDestroy() {
+        super.onDestroy()
+        instance = null  // Reset the instance
+    }
+
+
     fun startBiometricAuthentication() {
+
         CoroutineScope(Dispatchers.Main).launch{
             val biometricManager = BiometricManager.from(this@MainActivity)
             if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) != BiometricManager.BIOMETRIC_SUCCESS) {
                 // 생체 인증을 사용할 수 없는 경우
-//                return
+                webAppInterface.sendAuthenticationResultToWeb(false)
+
+                return@launch
             }
 
             val executor = ContextCompat.getMainExecutor(this@MainActivity)
@@ -123,18 +133,25 @@ class MainActivity : AppCompatActivity() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     Log.d("biometric test","인증 에러")
+                    webAppInterface.sendAuthenticationResultToWeb(false)
+
                     // 인증 에러 처리
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
                     Log.d("biometric test","인증 실패")
+                    webAppInterface.sendAuthenticationResultToWeb(false)
+
                     // 인증 실패 처리
                 }
+
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     // 인증 성공 처리
                     Log.d("biometric test","인증 성공")
+                    webAppInterface.sendAuthenticationResultToWeb(true)
+
                 }
             })
 
@@ -149,4 +166,3 @@ class MainActivity : AppCompatActivity() {
 
     }
 }
-
