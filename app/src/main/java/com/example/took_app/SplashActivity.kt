@@ -27,7 +27,7 @@ class SplashActivity : AppCompatActivity() {
             if(accessToken != null && refreshToken != null) flag = 1
             else flag = 0
 
-            delay(2000)
+            delay(5000)
             val intent = Intent(this@SplashActivity, MainActivity::class.java)
             intent.putExtra("isLogin",flag)
             startActivity(intent)

@@ -17,7 +17,7 @@ object RetrofitClient {
             override fun intercept(chain: Interceptor.Chain): Response {
                 val original: Request = chain.request()
                 val requestBuilder: Request.Builder = original.newBuilder()
-                    .header("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhIiwiaWF0IjoxNzIzMDE4NzE5LCJleHAiOjE3MjMwMjIzMTl9.jWLMUZgJY1KrvvThPnFSaYRpbaPmKR3GWcv_kZ9gJy4") // 여기에 JWT 토큰을 하드코딩합니다.
+                    .header("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhIiwiaWF0IjoxNzIzMDEyMTk2LCJleHAiOjE3MjU2MDQxOTZ9.jhWly6IB9HzPdZ4sPUrcNLJDcvdRDxCPk89cv5S-Kx4") // 여기에 JWT 토큰을 하드코딩합니다.
                 val request: Request = requestBuilder.build()
                 return chain.proceed(request)
             }
