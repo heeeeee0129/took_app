@@ -28,7 +28,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "FCM 토큰: $token")
         Log.d("FCM", "onNewToken 호출됨")
         // 여기서 서버로 토큰을 전송하는 작업을 수행합니다.
-        val userSeq = 4L // userSeq 가져오기
+        val userSeq = 7L // userSeq 가져오기
         val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
         val request = FCMTokenRequest(userSeq, token) // 서버에 저장
         Log.d("request", "request: $request")
