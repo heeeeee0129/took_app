@@ -81,11 +81,21 @@ class WebAppInterface(private val context: Context, private val webView: WebView
     }
 
     @JavascriptInterface
-    fun getTokenFromWeb(id: String, pwd: String) {
+    fun getTokenFromWeb(id: String, pwd: String, userSeq: Int) {
         CoroutineScope(Dispatchers.IO).launch {
+            val userSeqLong: Long = userSeq.toLong()
             userDataStore.saveUserId(id)
             userDataStore.saveUserPassword(pwd)
+            userDataStore.saveUserSeq(userSeqLong) // userSeq 저장
             userDataStore.saveIsLoggedIn(true)
+
+        }
+    }
+
+    @JavascriptInterface
+    fun goTookChat() {
+        webView.post {
+            webView.evaluateJavascript("javascript:onAlarm()", null)
         }
     }
 

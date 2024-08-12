@@ -16,7 +16,10 @@ import androidx.core.content.ContextCompat
 import com.example.took_app.network.FCMApiService
 import com.example.took_app.network.FCMTokenRequest
 import com.example.took_app.network.RetrofitClient
-import com.example.took_app.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,24 +30,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Log.d("FCM", "FCM 토큰: $token")
         Log.d("FCM", "onNewToken 호출됨")
-        // 여기서 서버로 토큰을 전송하는 작업을 수행합니다.
-        val userSeq = 7L // userSeq 가져오기
-        val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
-        val request = FCMTokenRequest(userSeq, token) // 서버에 저장
-        Log.d("request", "request: $request")
-        apiService.saveToken(request).enqueue(object : Callback<String> {
-            override fun onResponse(call: Call<String>, response: Response<String>) {
+
+        // 비동기적으로 userSeq를 가져오고 토큰을 서버에 저장합니다.
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val userDataStore = UserDataStore(applicationContext)
+                val userSeq = userDataStore.getUserSeq() ?: 0L // null이면 기본값으로 0L 사용
+                val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
+                val request = FCMTokenRequest(userSeq, token)
+
+                val response = apiService.saveToken(request).execute() // 동기 호출
+
                 if (response.isSuccessful) {
                     Log.d("FCM", "토큰 저장 성공: ${response.body()}")
                 } else {
                     Log.e("FCM", "토큰 저장 실패: ${response.errorBody()?.string()}")
                 }
+            } catch (e: Exception) {
+                Log.e("FCM", "토큰 저장 실패: ${e.message}")
             }
-
-            override fun onFailure(call: Call<String>, t: Throwable) {
-                Log.e("FCM", "토큰 저장 실패: ${t.message}")
-            }
-        })
+        }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -73,11 +78,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // 알림을 클릭했을 때 열릴 액티비티 설정
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        // BroadcastReceiver를 통한 알림 클릭 시 처리
+        val intent = Intent(this, NotificationReceiver::class.java)
+        val pendingIntent: PendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         // 권한 확인
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -87,11 +90,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         // 알림 빌더 설정
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_notification) // 알림 아이콘 설정
+            .setSmallIcon(R.drawable.splash_logo) // 알림 아이콘 설정
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(pendingIntent) // 클릭 시 BroadcastReceiver 호출
             .setAutoCancel(true)
 
         // 알림 표시
@@ -99,4 +102,5 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notify(0, notificationBuilder.build())
         }
     }
+
 }
