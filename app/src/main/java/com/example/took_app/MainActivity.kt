@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val isLogin = intent.getIntExtra("isLogin", -1)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
@@ -80,11 +81,9 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 checkAutoLogin()
-                requestFCMToken()
             }
         }
         myWebView.loadUrl("https://i11e205.p.ssafy.io")
-        handleIntent(intent)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -98,36 +97,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent) {
-        if (intent.action == "com.example.took_app.CHECK_AUTO_LOGIN") {
-            checkAutoLogin()
-        }
-    }
-
-    private fun requestFCMToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM", "토큰 요청 실패", task.exception)
-                return@addOnCompleteListener
-            }
-            val token = task.result
-            Log.d("FCM", "FCM 토큰: $token")
-            sendTokenToWeb(token)
-        }
-    }
-
-    private fun sendTokenToWeb(token: String) {
-        myWebView.post {
-            myWebView.evaluateJavascript("javascript:onReceiveFCMToken('$token')", null)
-        }
-    }
-
     private fun checkAutoLogin() {
         CoroutineScope(Dispatchers.Main).launch {
             val isLoggedIn = userDataStore.getIsLoggedIn()
@@ -137,22 +106,6 @@ class MainActivity : AppCompatActivity() {
                 if (id != null && pwd != null) {
                     myWebView.post {
                         myWebView.evaluateJavascript("javascript:onLogin('$id', '$pwd')", null)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun handleAlarm() {
-        CoroutineScope(Dispatchers.Main).launch {
-            val isLoggedIn = userDataStore.getIsLoggedIn()
-            if( isLoggedIn ){
-                val id = userDataStore.getUserId()
-                val pwd = userDataStore.getUserPassword()
-                if(id != null && pwd != null){
-                    myWebView.post{
-                        myWebView.evaluateJavascript("javascript:onAlarm('$id', '$pwd')", null)
-
                     }
                 }
             }

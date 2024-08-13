@@ -22,7 +22,6 @@ class UserDataStore(private val context: Context) {
         val USER_ID = stringPreferencesKey("user_id")
         val USER_PASSWORD = stringPreferencesKey("user_password")
         val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
-        val USER_SEQ = longPreferencesKey("user_seq")
     }
 
     suspend fun saveIsLoggedIn(isLoggedIn: Boolean) {
@@ -134,22 +133,6 @@ class UserDataStore(private val context: Context) {
     suspend fun getUserPassword(): String? {
         return withContext(Dispatchers.IO) {
             dataStore.data.first()[PreferencesKeys.USER_PASSWORD]
-        }
-    }
-
-    // userSeq 저장 함수 추가
-    suspend fun saveUserSeq(seq: Long) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.USER_SEQ] = seq
-            }
-        }
-    }
-
-    // userSeq 불러오기 함수 추가
-    suspend fun getUserSeq(): Long? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.USER_SEQ]
         }
     }
 
