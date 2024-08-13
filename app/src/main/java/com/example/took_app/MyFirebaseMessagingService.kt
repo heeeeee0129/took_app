@@ -17,34 +17,39 @@ import com.example.took_app.network.FCMApiService
 import com.example.took_app.network.FCMTokenRequest
 import com.example.took_app.network.RetrofitClient
 import com.example.took_app.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    private val userDataStore = UserDataStore()
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("FCM", "FCM 토큰: $token")
         Log.d("FCM", "onNewToken 호출됨")
         // 여기서 서버로 토큰을 전송하는 작업을 수행합니다.
-        val userSeq = 7L // userSeq 가져오기
-        val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
-        val request = FCMTokenRequest(userSeq, token) // 서버에 저장
-        Log.d("request", "request: $request")
-        apiService.saveToken(request).enqueue(object : Callback<String> {
-            override fun onResponse(call: Call<String>, response: Response<String>) {
-                if (response.isSuccessful) {
-                    Log.d("FCM", "토큰 저장 성공: ${response.body()}")
-                } else {
-                    Log.e("FCM", "토큰 저장 실패: ${response.errorBody()?.string()}")
+        CoroutineScope(Dispatchers.IO).launch {
+            val userSeq = userDataStore.getUserSeq()?.toLong()
+            if (userSeq != null){
+                val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
+                val request = FCMTokenRequest(userSeq, token) // 서버에 저장
+                val tokenDeferred = async { apiService.saveToken(request) }
+                val tokenResponse = tokenDeferred.await()
+                if(tokenResponse.isSuccessful) {
+                    Log.d("FCM", "토큰 저장 성공: ${tokenResponse.body()}")
+                }else {
+                    Log.e("FCM", "토큰 저장 실패: ${tokenResponse.errorBody()?.string()}")
                 }
+            }else{
+                Log.d("FCM","userSeq가 없음")
             }
-
-            override fun onFailure(call: Call<String>, t: Throwable) {
-                Log.e("FCM", "토큰 저장 실패: ${t.message}")
-            }
-        })
+        }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

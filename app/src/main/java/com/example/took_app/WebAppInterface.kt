@@ -9,12 +9,18 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.example.took_app.network.FCMApiService
+import com.example.took_app.network.FCMTokenRequest
+import com.example.took_app.network.RetrofitClient
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class WebAppInterface(private val context: Context, private val webView: WebView) {
@@ -22,7 +28,7 @@ class WebAppInterface(private val context: Context, private val webView: WebView
     private lateinit var locationManager: LocationManager
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var locationRunnable: Runnable
-    private val userDataStore = UserDataStore(context)  // 수정된 부분
+    private val userDataStore = UserDataStore()  // 수정된 부분
 
     @JavascriptInterface
     fun showToast(toast: String) {
@@ -81,11 +87,35 @@ class WebAppInterface(private val context: Context, private val webView: WebView
     }
 
     @JavascriptInterface
-    fun getTokenFromWeb(id: String, pwd: String) {
+    fun getTokenFromWeb(seq: String, token: String) {
+        Log.d("FCM Test","getTokenFromWeb called")
         CoroutineScope(Dispatchers.IO).launch {
-            userDataStore.saveUserId(id)
-            userDataStore.saveUserPassword(pwd)
-            userDataStore.saveIsLoggedIn(true)
+            userDataStore.saveToken(token)
+            userDataStore.saveUserSeq(seq)
+
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w("FCM", "토큰 요청 실패", task.exception)
+                    return@addOnCompleteListener
+                }
+                val token = task.result
+                Log.d("FCM", "FCM 토큰: $token")
+            }
+                val userSeq = userDataStore.getUserSeq()?.toLong()
+                if (userSeq != null){
+                    val apiService = RetrofitClient.instance.create(FCMApiService::class.java)
+                    val request = FCMTokenRequest(userSeq, token) // 서버에 저장
+                    Log.d("request", "request: $request")
+                    val tokenDeferred = async { apiService.saveToken(request) }
+                    val tokenResponse = tokenDeferred.await()
+                    if(tokenResponse.isSuccessful) {
+                        Log.d("FCM", "토큰 저장 성공: ${tokenResponse.body()}")
+                    }else {
+                        Log.e("FCM", "토큰 저장 실패: ${tokenResponse.errorBody()?.string()}")
+                    }
+                }else{
+                    Log.d("FCM","userSeq가 없음")
+                }
         }
     }
 

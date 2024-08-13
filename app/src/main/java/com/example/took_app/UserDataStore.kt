@@ -10,131 +10,43 @@ import kotlinx.coroutines.withContext
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "userData")
 
-class UserDataStore(private val context: Context) {
+class UserDataStore() {
+    private val context = App.context()
     private val dataStore: DataStore<Preferences> = context.dataStore
 
     private object PreferencesKeys {
-        val FIRST_FLAG = booleanPreferencesKey("first_flag")
-        val ACCESS_TOKEN = stringPreferencesKey("access_token")
-        val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
-        val LOGIN_TYPE = stringPreferencesKey("login_type")
-        val NICKNAME = stringPreferencesKey("nickname")
-        val USER_ID = stringPreferencesKey("user_id")
-        val USER_PASSWORD = stringPreferencesKey("user_password")
-        val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+        val TOKEN = stringPreferencesKey("token")
+        val USER_SEQ = stringPreferencesKey("user_seq")
     }
 
-    suspend fun saveIsLoggedIn(isLoggedIn: Boolean) {
+    suspend fun saveToken(token: String) {
         withContext(Dispatchers.IO) {
             dataStore.edit { pref ->
-                pref[PreferencesKeys.IS_LOGGED_IN] = isLoggedIn
+                pref[PreferencesKeys.TOKEN] = token
             }
         }
     }
 
-    suspend fun getIsLoggedIn(): Boolean {
+    suspend fun getToken(): String? {
         return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.IS_LOGGED_IN] ?: false
+            dataStore.data.first()[PreferencesKeys.TOKEN]
         }
     }
 
-    suspend fun saveAccessToken(token: String) {
+    suspend fun saveUserSeq(seq: String) {
         withContext(Dispatchers.IO) {
             dataStore.edit { pref ->
-                pref[PreferencesKeys.ACCESS_TOKEN] = token
+                pref[PreferencesKeys.USER_SEQ] = seq
             }
         }
     }
 
-    suspend fun getAccessToken(): String? {
+    suspend fun getUserSeq(): String? {
         return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.ACCESS_TOKEN]
+            dataStore.data.first()[PreferencesKeys.USER_SEQ]
         }
     }
 
-    suspend fun saveRefreshToken(token: String) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.REFRESH_TOKEN] = token
-            }
-        }
-    }
-
-    suspend fun getRefreshToken(): String? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.REFRESH_TOKEN]
-        }
-    }
-
-    suspend fun saveLoginType(type: String) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.LOGIN_TYPE] = type
-            }
-        }
-    }
-
-    suspend fun getLoginType(): String? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.LOGIN_TYPE]
-        }
-    }
-
-    suspend fun saveNickname(data: String) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.NICKNAME] = data
-            }
-        }
-    }
-
-    suspend fun getNickname(): String? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.NICKNAME]
-        }
-    }
-
-    suspend fun saveFirstFlag(flag: Boolean) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.FIRST_FLAG] = flag
-            }
-        }
-    }
-
-    suspend fun getFirstFlag(): Boolean {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.FIRST_FLAG] ?: false
-        }
-    }
-
-    suspend fun saveUserId(id: String) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.USER_ID] = id
-            }
-        }
-    }
-
-    suspend fun getUserId(): String? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.USER_ID]
-        }
-    }
-
-    suspend fun saveUserPassword(password: String) {
-        withContext(Dispatchers.IO) {
-            dataStore.edit { pref ->
-                pref[PreferencesKeys.USER_PASSWORD] = password
-            }
-        }
-    }
-
-    suspend fun getUserPassword(): String? {
-        return withContext(Dispatchers.IO) {
-            dataStore.data.first()[PreferencesKeys.USER_PASSWORD]
-        }
-    }
 
     suspend fun deleteAll() {
         withContext(Dispatchers.IO) {

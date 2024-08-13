@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     private lateinit var myWebView: WebView
     private lateinit var webAppInterface: WebAppInterface
-    private val userDataStore by lazy { UserDataStore(this) }
+    private val userDataStore by lazy { UserDataStore() }
 
     init {
         instance = this
@@ -61,15 +61,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM", "토큰 요청 실패", task.exception)
-                return@addOnCompleteListener
-            }
-            val token = task.result
-            Log.d("FCM", "FCM 토큰: $token")
-        }
-
         myWebView = findViewById(R.id.webview)
         myWebView.settings.javaScriptEnabled = true
         WebView.setWebContentsDebuggingEnabled(true)
@@ -98,14 +89,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAutoLogin() {
-        CoroutineScope(Dispatchers.Main).launch {
-            val isLoggedIn = userDataStore.getIsLoggedIn()
-            if (isLoggedIn) {
-                val id = userDataStore.getUserId()
-                val pwd = userDataStore.getUserPassword()
-                if (id != null && pwd != null) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val token = userDataStore.getToken()
+            if (token != null) {
+                val seq = userDataStore.getUserSeq()
+                if (seq != null) {
                     myWebView.post {
-                        myWebView.evaluateJavascript("javascript:onLogin('$id', '$pwd')", null)
+                        myWebView.evaluateJavascript("javascript:onLogin('$seq', '$token')", null)
                     }
                 }
             }
@@ -154,5 +144,10 @@ class MainActivity : AppCompatActivity() {
 
             biometricPrompt.authenticate(promptInfo)
         }
+    }
+
+    override fun onBackPressed() { // 웹뷰 뒤로가기 처리
+        if(myWebView.canGoBack()) myWebView.goBack()
+        else super.onBackPressed()
     }
 }
